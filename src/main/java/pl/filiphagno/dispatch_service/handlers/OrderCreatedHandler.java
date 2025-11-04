@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import pl.filiphagno.dispatch_service.message.OrderCreated;
 import pl.filiphagno.dispatch_service.services.DispatchService;
 
+
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -22,6 +23,10 @@ public class OrderCreatedHandler {
     )
     public void listen(OrderCreated payload) {
         log.info("Received message: " + payload);
-        dispatchService.process(payload);
+        try {
+            dispatchService.process(payload);
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
     }
 }
