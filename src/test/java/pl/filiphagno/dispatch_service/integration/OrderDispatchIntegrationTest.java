@@ -14,6 +14,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.ContainerTestUtils;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -71,13 +72,13 @@ public class OrderDispatchIntegrationTest {
         AtomicInteger orderDispatchedCounter = new AtomicInteger(0);
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = DISPATCH_TRACKING_TOPIC)
-        void receiveDispatchPreparing(@Payload DispatchPreparing payload) {
+        void receiveDispatchPreparing(@Header(KafkaHeaders.RECEIVED_KEY) String key,  @Payload DispatchPreparing payload) {
             log.debug("Received DispatchPreparing: " + payload);
             dispatchPreparingCounter.incrementAndGet();
         }
 
         @KafkaListener(groupId = "KafkaIntegrationTest", topics = ORDER_DISPATCHED_TOPIC)
-        void receiveOrderDispatched(@Payload OrderDispatched payload) {
+        void receiveOrderDispatched(@Header(KafkaHeaders.RECEIVED_KEY) String key, @Payload OrderDispatched payload) {
             log.debug("Received OrderDispatched: " + payload);
             orderDispatchedCounter.incrementAndGet();
         }
@@ -98,8 +99,9 @@ public class OrderDispatchIntegrationTest {
      */
     @Test
     public void testOrderDispatchFlow() throws Exception {
+        String key = randomUUID().toString();
         OrderCreated orderCreated = TestEventData.buildOrderCreated(randomUUID(), "my-item");
-        sendMessage(ORDER_CREATED_TOPIC, orderCreated);
+        sendMessage(ORDER_CREATED_TOPIC, key, orderCreated);
 
         await().atMost(3, TimeUnit.SECONDS).pollDelay(100, TimeUnit.MILLISECONDS)
                 .until(testListener.dispatchPreparingCounter::get, equalTo(1));
@@ -107,9 +109,10 @@ public class OrderDispatchIntegrationTest {
                 .until(testListener.orderDispatchedCounter::get, equalTo(1));
     }
 
-    private void sendMessage(String topic, Object data) throws Exception {
+    private void sendMessage(String topic, String key, Object data) throws Exception {
         kafkaTemplate.send(MessageBuilder
                 .withPayload(data)
+                .setHeader(KafkaHeaders.KEY, key)
                 .setHeader(KafkaHeaders.TOPIC, topic)
                 .build()).get();
     }

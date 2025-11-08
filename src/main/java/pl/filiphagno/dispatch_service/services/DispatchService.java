@@ -17,13 +17,13 @@ public class DispatchService {
     private static final String DISPATCH_PREPARING_TOPIC = "dispatch.tracking";
     private final KafkaTemplate<String, Object> kafkaProducer;
 
-    public void process(OrderCreated payload) throws ExecutionException, InterruptedException {
+    public void process(String key, OrderCreated payload) throws ExecutionException, InterruptedException {
 
         DispatchPreparing dispatchPreparing = DispatchPreparing.builder().uuid(payload.getOrderId()).build();
-        kafkaProducer.send(DISPATCH_PREPARING_TOPIC, dispatchPreparing).get();
+        kafkaProducer.send(DISPATCH_PREPARING_TOPIC, key, dispatchPreparing).get();
 
         OrderDispatched orderDispatched = OrderDispatched.builder().orderId(payload.getOrderId()).build();
-        kafkaProducer.send(ORDER_DISPATCHED_TOPIC, orderDispatched).get();
+        kafkaProducer.send(ORDER_DISPATCHED_TOPIC, key, orderDispatched).get();
 
     };
 }
