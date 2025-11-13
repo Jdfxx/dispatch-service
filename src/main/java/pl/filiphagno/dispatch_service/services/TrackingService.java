@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import pl.filiphagno.dispatch_service.message.DispatchCompleted;
 import pl.filiphagno.dispatch_service.message.DispatchPreparing;
 import pl.filiphagno.dispatch_service.message.Status;
 import pl.filiphagno.dispatch_service.message.TrackingStatusUpdated;
@@ -19,12 +20,23 @@ public class TrackingService {
 
     private final KafkaTemplate<String, Object> kafkaProducer;
 
-    public void process(DispatchPreparing dispatchPreparing) throws Exception {
+    public void processDispatchPreparing(DispatchPreparing dispatchPreparing) throws Exception {
+
         log.info("Received dispatch preparing message : " + dispatchPreparing);
 
         TrackingStatusUpdated trackingStatusUpdated = TrackingStatusUpdated.builder()
                 .orderId(dispatchPreparing.getUuid())
-                .status(Status.PREPARING)
+                .status(Status.PREPARING.PREPARING)
+                .build();
+        kafkaProducer.send(TRACKING_STATUS_TOPIC, trackingStatusUpdated).get();
+    }
+
+    public void processDispatched(DispatchCompleted dispatchCompleted) throws Exception {
+        log.info("Received dispatched message : " + dispatchCompleted);
+
+        TrackingStatusUpdated trackingStatusUpdated = TrackingStatusUpdated.builder()
+                .orderId(dispatchCompleted.getOrderId())
+                .status(Status.DISPATCHED)
                 .build();
         kafkaProducer.send(TRACKING_STATUS_TOPIC, trackingStatusUpdated).get();
     }

@@ -1,5 +1,6 @@
 package pl.filiphagno.dispatch_service.util;
 
+import pl.filiphagno.dispatch_service.message.DispatchCompleted;
 import pl.filiphagno.dispatch_service.message.DispatchPreparing;
 import pl.filiphagno.dispatch_service.message.OrderCreated;
 
@@ -14,5 +15,12 @@ public class TestEventData {
         return DispatchPreparing.builder()
                 .uuid(orderId)
                 .build();
+    }
+    public static DispatchCompleted buildDispatchCompletedEvent(UUID orderId, String date) {
+        return DispatchCompleted.builder()
+                .orderId(orderId)
+                .dispatchedDate(date)
+                .build();
+
     }
 }
